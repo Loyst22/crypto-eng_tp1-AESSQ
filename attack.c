@@ -14,6 +14,34 @@
 //
 // }
 
+void invert_shift_rows(uint8_t block[AES_BLOCK_SIZE]) {
+	uint8_t tmp;
+  /*
+	 * InvShiftRow
+	 */
+	/* Row 0 */
+	// No changes
+	/* Row 1 */
+	tmp = block[13];
+	block[13] = block[ 9];
+	block[ 9] = block[ 5];
+	block[ 5] = block[ 1];
+	block[ 1] = tmp;
+	/* Row 2 */
+	tmp = block[2];
+	block[ 2] = block[10];
+	block[10] = tmp;
+	tmp = block[6];
+	block[ 6] = block[14];
+	block[14] = tmp;
+	/* Row 3 */
+	tmp = block[3];
+	block[ 3] = S[block[ 7]];
+	block[ 7] = S[block[11]];
+	block[11] = S[block[15]];
+	block[15] = S[tmp];
+}
+
 void print_block(uint8_t block[AES_BLOCK_SIZE]) {
 
   for (int i = 0; i < AES_BLOCK_SIZE; i++) {
