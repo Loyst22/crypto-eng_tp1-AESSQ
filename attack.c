@@ -1,3 +1,10 @@
+/*
+ * Square Attack on 3 1/2 rounds AES-128 Block Cipher
+ * By: 
+ * 	Lehrach Thomas
+ * 	Coatelan Louis
+ */
+
 #include "aes-128_enc.h"
 #include <sys/random.h>
 #include <stdio.h>
