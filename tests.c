@@ -115,6 +115,52 @@ uint32_t attack_alt_xtime_aes() {
   return 0;
 }
 
+uint32_t attack_alt_sbox_aes() {
+  printf("Running 3-round distinguisher attack on alt S-box AES and random key:\n");
+
+	uint8_t key[AES_128_KEY_SIZE] = {0};
+	generate_random_key(key);
+
+	uint8_t ciphers[AES_BLOCK_SIZE][256][AES_BLOCK_SIZE] = {0};
+	uint8_t recovered_key[AES_128_KEY_SIZE] = {0};
+
+    // Encrypt using different AES
+	gen_all_delta_sets_alt_sbox(ciphers, key);
+	key_recovery_attack_alt_sbox(ciphers, recovered_key);
+
+	printf("Actual key: \n");
+	print_key(key);
+	printf("Recovered key: \n");
+	print_key(recovered_key);
+  printf("\n");
+
+  // return memcmp(key, recovered_key, sizeof(uint8_t)*AES_128_KEY_SIZE);
+  return 0;
+}
+
+uint32_t attack_alt_aes() {
+  printf("Running 3-round distinguisher attack on alt S-box AES and random key:\n");
+
+	uint8_t key[AES_128_KEY_SIZE] = {0};
+	generate_random_key(key);
+
+	uint8_t ciphers[AES_BLOCK_SIZE][256][AES_BLOCK_SIZE] = {0};
+	uint8_t recovered_key[AES_128_KEY_SIZE] = {0};
+
+    // Encrypt using different AES
+	gen_all_delta_sets_alt_sbox(ciphers, key);
+	key_recovery_attack_alt_sbox(ciphers, recovered_key);
+
+	printf("Actual key: \n");
+	print_key(key);
+	printf("Recovered key: \n");
+	print_key(recovered_key);
+  printf("\n");
+
+  // return memcmp(key, recovered_key, sizeof(uint8_t)*AES_128_KEY_SIZE);
+  return 0;
+}
+
 uint32_t compare_aes_ciphers() {
   printf("Testing alt AES variations for same key and plaintext\n");
 
@@ -126,10 +172,13 @@ uint32_t compare_aes_ciphers() {
     0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10,
   };
   uint8_t block_1[AES_BLOCK_SIZE] = {};
+  uint8_t block_2[AES_BLOCK_SIZE] = {};
   memcpy(block_1, block_0, sizeof(uint8_t)*AES_BLOCK_SIZE);
+  memcpy(block_2, block_0, sizeof(uint8_t)*AES_BLOCK_SIZE);
 
   aes128_enc(block_0, key, 4, false);
   aes128_enc_alt_xtime(block_1, key, 4, false);
+  aes128_enc_alt_sbox(block_2, key, 4, false);
 
   printf("Key:\n");
   print_key(key);
@@ -138,14 +187,20 @@ uint32_t compare_aes_ciphers() {
 
   printf("Alt XTIME AES ciphered block:\n");
   print_block(block_1);
+  printf("Alt S-box AES ciphered block:\n");
+  print_block(block_2);
   printf("\n");
 }
 
 int main(void)
 {
+  printf("-------------------Comparing ciphertext of all cipher variations---------------------------\n");
+  compare_aes_ciphers();
+  printf("-------------------Running attack on all cipher variations---------------------------------\n");
+
   attack_normal_aes();
  
   attack_alt_xtime_aes();
+  attack_alt_sbox_aes();
 
-  compare_aes_ciphers();
 }
