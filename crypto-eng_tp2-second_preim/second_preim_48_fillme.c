@@ -95,15 +95,15 @@ void speck48_96_inv(const uint32_t k[4], const uint32_t c[2], uint32_t p[2])
 	/* full decyption */
 	/*
 	---------------------------- decryption ----------------------------
-	for i = 0..T-1
-		x ← (S−α x + y) ⊕ k[i]
-		y ← Sβy ⊕ x
+	for i = T-1..0
+		y ← S-β(y ⊕ x)
+		x ← Sα((x ⊕ k[i]) - y)
 	end for
 	*/
-	for (int32_t i = 22; i >= 0; i--)
+	for (unsigned i = 23; i > 0; i--)
 	{
 		p[1] = ROTL24_21(p[1] ^ p[0]);
-		p[0] = ROTL24_8((p[0] ^ rk[i]) - p[1]) & 0xFFFFFF; // addition (+) is done mod 2**24
+		p[0] = ROTL24_8(((p[0] ^ rk[i-1]) - p[1]) & 0xFFFFFF); // addition (+) is done mod 2**24
 	}
 	// end of the loop, plaintext is in p[0] and p[1]
 
@@ -117,7 +117,7 @@ bool test_vector_okay()
     uint32_t p[2] = {0x6d2073, 0x696874};
     uint32_t c[2];
     speck48_96(k, p, c);
-    printf("%X %X\n", c[0], c[1]);
+    printf("c = %X || %X\n", c[0], c[1]);
 
     return (c[0] == 0x735E10) && (c[1] == 0xB6445D);
 }
@@ -130,9 +130,9 @@ bool test_sp48_inv()
     uint32_t c[2];
     speck48_96(k, p, c);
 	speck48_96_inv(k, c, p_verif);
-    printf("%X %X\n", p_verif[0], p_verif[1]);
+    printf("p = %X || %X\n", p_verif[0], p_verif[1]);
 
-    return (p[0] == p_verif[0]) && (p[1] == p_verif[0]);
+    return (p[0] == p_verif[0]) && (p[1] == p_verif[1]);
 }
 
 /* The Davies-Meyer compression function based on speck48_96,
