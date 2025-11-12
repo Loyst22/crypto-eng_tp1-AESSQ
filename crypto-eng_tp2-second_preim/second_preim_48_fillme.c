@@ -189,7 +189,7 @@ void find_exp_mess(uint32_t m1[4], uint32_t m2[4])
 {
 	/* FILL ME */
 
-	entry hashtable_h[N];
+	entry *hashtable_h = malloc(sizeof(entry) * N);
 	memset(hashtable_h, 0, sizeof(entry) * N);
 	uint64_t h;
 	uint64_t fp;
