@@ -3,6 +3,9 @@
 
 #define MASK_24 0xFFFFFFULL
 #define CONV_24_to_48(x) ( ((uint64_t)(x[0] & MASK_24)) | ((uint64_t)(x[1] & MASK_24) << 24) )
+#define MASK_48 0xFFFFFFFFFFFFULL
+
+#define N ((int) pow(2, 24))
 
 
 void speck48_96(const uint32_t k[4], const uint32_t p[2], uint32_t c[2]);

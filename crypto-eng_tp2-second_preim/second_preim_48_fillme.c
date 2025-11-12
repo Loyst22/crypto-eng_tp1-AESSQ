@@ -3,8 +3,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
+#include <string.h>
 
 #include "second_preim.h"
+#include "hasht.h"
+#include "xoshiro.h"
 
 #define ROTL24_16(x) ((((x) << 16) ^ ((x) >> 8)) & 0xFFFFFF)
 #define ROTL24_3(x) ((((x) << 3) ^ ((x) >> 21)) & 0xFFFFFF)
@@ -13,7 +16,6 @@
 #define ROTL24_21(x) ((((x) << 21) ^ ((x) >> 3)) & 0xFFFFFF)
 
 #define IV 0x010203040506ULL 
-
 
 /*
  * the 96-bit key is stored in four 24-bit chunks in the low bits of k[0]...k[3]
@@ -186,6 +188,44 @@ uint64_t get_cs48_dm_fp(uint32_t m[4])
 void find_exp_mess(uint32_t m1[4], uint32_t m2[4])
 {
 	/* FILL ME */
+
+	entry hashtable_h[N];
+	memset(hashtable_h, 0, sizeof(entry) * N);
+	uint64_t h;
+	uint64_t fp;
+
+	// compute N possible chaining values for N random first-block messages m1
+	for (uint32_t i = 0; i < N; i++) {
+		// get a random m1 value
+		m1[0] = xoshiro256plus_random();
+		m1[2] = xoshiro256plus_random();
+
+		// TODO change this into a hashtable insert
+		h = cs48_dm(m1, IV);
+		insert(hashtable_h, N, h, m1);
+	}
+
+	bool collision = false;
+	uint32_t* m_collision;
+	while (!collision) {
+		// get a random m2 value
+		m2[0] = xoshiro256plus_random();
+		m2[2] = xoshiro256plus_random();
+
+		fp = get_cs48_dm_fp(m2);
+
+		// hashtable lookup
+		m_collision = lookup(hashtable_h, N, fp);
+		if (m_collision != NULL) {
+			if (cs48_dm(m_collision, IV) & MASK_48 == fp & MASK_48) {
+				for (uint16_t i = 0; i < 4; i++) {
+					m1[i] = m_collision[i];
+				}
+			}
+			return;
+		}
+	}
+	return;
 }
 
 void attack(void)
