@@ -15,15 +15,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-bool test_vector_okay(void);
-
-bool test_sp48_inv(void);
-
-bool test_cs48_dm(void);
-
-bool test_cs48_dm_fp(void);
-
-bool test_conv_macro(void);
 
 // called with 0 < k < 64, so no need for reductions to avoid UB
 static inline uint64_t __my_little_xoshiro_rotl(const uint64_t x, int k) {

@@ -14,8 +14,6 @@
 
 #define IV 0x010203040506ULL 
 
-#define MASK_24 0xFFFFFFULL
-#define CONV_24_to_48(x) ( ((uint64_t)(x[0] & MASK_24)) | ((uint64_t)(x[1] & MASK_24) << 24) )
 
 /*
  * the 96-bit key is stored in four 24-bit chunks in the low bits of k[0]...k[3]
@@ -188,69 +186,6 @@ uint64_t get_cs48_dm_fp(uint32_t m[4])
 void find_exp_mess(uint32_t m1[4], uint32_t m2[4])
 {
 	/* FILL ME */
-}
-
-/************************************************************
- * 															*
- * 						    Tests							*
- * 															*
- ************************************************************/
-
-/* Test against EP 2013/404, App. C */
-bool test_vector_okay()
-{
-    uint32_t k[4] = {0x1a1918, 0x121110, 0x0a0908, 0x020100};
-    uint32_t p[2] = {0x6d2073, 0x696874};
-    uint32_t c[2];
-    speck48_96(k, p, c);
-    // printf("c = %X || %X\n", c[0], c[1]);
-
-    return (c[0] == 0x735E10) && (c[1] == 0xB6445D);
-}
-
-bool test_sp48_inv()
-{
-    uint32_t k[4] = {0x1a1918, 0x121110, 0x0a0908, 0x020100};
-    uint32_t p[2] = {0x6d2073, 0x696874};
-	uint32_t p_verif[2] = {0};
-    uint32_t c[2];
-    speck48_96(k, p, c);
-	speck48_96_inv(k, c, p_verif);
-    // printf("p = %X || %X\n", p_verif[0], p_verif[1]);
-
-    return (p[0] == p_verif[0]) && (p[1] == p_verif[1]);
-}
-
-bool test_cs48_dm(void) {
-	const uint32_t m[4] = {0, 1, 2, 3};
-	const uint64_t h = 0x010203040506;
-
-	uint64_t result = cs48_dm(m, h);
-
-	return (result == 0x5DFD97183F91);
-}
-
-bool test_cs48_dm_fp(void) 
-{
-	uint32_t m[4] = {0x1a1918, 0x121110, 0x0a0908, 0x020100};
-
-	uint64_t fp = get_cs48_dm_fp(m);
-
-	return (cs48_dm(m, fp) == fp);
-}
-
-
-bool test_conv_macro(void)
-{
-	uint32_t x[2] = {0x6d2073, 0x696874};
-
-	uint64_t y = CONV_24_to_48(x);
-
-	uint32_t z[2];
-	z[0] = (y & MASK_24);
-    z[1] = ((y & (MASK_24 << 24)) >> 24);
-
-	return (x[0] == z[0] && x[1] == z[1]);
 }
 
 void attack(void)

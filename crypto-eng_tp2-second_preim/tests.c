@@ -2,13 +2,6 @@
 #include <stdbool.h>
 #include "second_preim.h"
 
-<<<<<<< Updated upstream
-int main(void)
-{
-	printf("================ Tests ================\n\n");
-
-	printf("Question 1\n    ");
-=======
 /* Test against EP 2013/404, App. C */
 bool test_vector_okay()
 {
@@ -44,26 +37,42 @@ int test_cs48_dm(void) {
 }
 
 
+bool test_cs48_dm_fp(void) 
+{
+	uint32_t m[4] = {0x1a1918, 0x121110, 0x0a0908, 0x020100};
+
+	uint64_t fp = get_cs48_dm_fp(m);
+
+	return (cs48_dm(m, fp) == fp);
+}
+
+
+bool test_conv_macro(void)
+{
+	uint32_t x[2] = {0x6d2073, 0x696874};
+
+	uint64_t y = CONV_24_to_48(x);
+
+	uint32_t z[2];
+	z[0] = (y & MASK_24);
+    z[1] = ((y & (MASK_24 << 24)) >> 24);
+
+	return (x[0] == z[0] && x[1] == z[1]);
+}
+
 int main(void)
 {
 
->>>>>>> Stashed changes
+	printf("================ Tests ================\n\n");
+
+	printf("Question 1\n    ");
 	if (test_vector_okay()) {
 		printf("Correct implementation of speck48_96\n\n");
 	} else {
 		printf("Incorrect implementation of speck48_96\n\n");
 	}
   
-<<<<<<< Updated upstream
 	printf("Question 2\n    ");
-=======
-  if (test_cs48_dm()) {
-    printf("Correct implementation of cs48_dm\n");
-  } else {
-    printf("Incorrect implementation of cs48_dm\n");
-  }
-
->>>>>>> Stashed changes
 	if (test_sp48_inv()) {
 		printf("Correct implementation of speck48_96_inv\n\n");
 	} else {
