@@ -77,7 +77,7 @@ bool test_em(void)
   	memcpy(&m[4], m2, sizeof(uint32_t)*4);
   	uint64_t h1 = hs48(m, 2, 0, 0); // hs48(m1||m2)
 
-  	for (uint32_t i = 1; i <= N_TEST; i++) {
+  	for (uint32_t i = 1; i < N_TEST; i++) {
 
     	memcpy(&m[4 + (4 * i)], m2, sizeof(uint32_t)*4);
     	uint64_t h_i = hs48(m, (i+2), 0, 0); // hs48(m1||m2||..||m2)
