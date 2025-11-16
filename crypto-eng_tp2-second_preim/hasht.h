@@ -23,3 +23,22 @@ uint32_t *lookup(entry *ht, size_t size, const int64_t key) {
         return ht[idx].message;
     return NULL;
 }
+
+
+typedef struct {
+    uint64_t hash;
+    uint32_t i;
+} entry_hash;
+
+void insert_hash(entry_hash *ht, const uint64_t hash, uint32_t i) {
+    uint32_t idx = hash % N_BLOCKS;
+    ht[idx].hash = hash;
+    ht[idx].i = i;
+}
+
+uint32_t lookup_hash(entry_hash *ht, const uint64_t hash) {
+    uint32_t idx = hash % N_BLOCKS;
+    if ((ht[idx].hash & MASK_48) == (hash & MASK_48))
+        return ht[idx].i;
+    return 0;
+}

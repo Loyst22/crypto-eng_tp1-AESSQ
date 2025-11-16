@@ -160,7 +160,7 @@ int main(void)
 	printf("Question 2\n	");
 	uint32_t *m = message();
 	uint64_t h = hs48(m, (1 << 18), true, false); // message hashed with padding enabled
-	printf("hash: %llx", h);
+	printf("original hash: %llx\n", h);
 
 	printf("Attack:\n");
 	attack();

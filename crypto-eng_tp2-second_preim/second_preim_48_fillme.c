@@ -233,22 +233,8 @@ void find_exp_mess(uint32_t m1[4], uint32_t m2[4])
 	return;
 }
 
-void gen_intermediate_hashes(uint64_t *intermediate_hashes)
-{
-	uint32_t *message = malloc(sizeof(uint32_t) * (4 * (N_BLOCKS)));
-	for (int i = 0; i < (1 << 20); i+=4)
-	{
-		message[i + 0] = i;
-		message[i + 1] = 0;
-		message[i + 2] = 0;
-		message[i + 3] = 0;
-		intermediate_hashes[ (i / 4) ] = hs48(message, (i / 4), false, false);
-	}
 
-}
-
-
-void attack(void)
+bool attack(void)
 {
 	/*
 		second preimage of 2^18 blocks.
@@ -261,27 +247,76 @@ void attack(void)
 			and suffixing the colliding block and then the remaining blocks identical to the ones of mess
 	*/	
 
+	entry_hash *hashtable_h = malloc(sizeof(entry_hash) * (N_BLOCKS + 1));
+	uint32_t *message = malloc(sizeof(uint32_t) * (4 * (N_BLOCKS)));
+	uint64_t prev_hash = IV;
+
+		// create hashtable
+	for (size_t i = 0; i < (1 << 20); i+=4)
+	{
+		message[i + 0] = i;
+		message[i + 1] = 0;
+		message[i + 2] = 0;
+		message[i + 3] = 0;
+
+		// uint64_t intermediate_hash = hs48(message, (i / 4), false, false);
+		uint64_t intermediate_hash = cs48_dm(&message[i], prev_hash);
+		prev_hash = intermediate_hash;
+		insert_hash(hashtable_h, intermediate_hash, (i / 4));
+
+		// if (i % (1 << 16) == 0) {
+		// 	printf("hashtable at 0x%x / 0x%x\n", i, (1 << 20));
+		// }
+	}
+	printf("built hashtable\n");
+	// now we have all the intermediate hashes and can look those up fast
+
 
 	uint32_t m1[4];
 	uint32_t m2[4]; // chainable block
 	find_exp_mess(m1, m2);
 	uint64_t fp = get_cs48_dm_fp(m2);
 
-	uint64_t *intermediate_hashes = malloc(sizeof(uint64_t) * (N_BLOCKS + 1));
-	gen_intermediate_hashes(intermediate_hashes);
+	uint32_t random_m[4];
+	uint32_t i_block = 0;
 
-	// find intermediate hash == fp
-	for (size_t i = 0; i < N_BLOCKS; i++)
+	while (i_block == 0)
 	{
-		if (intermediate_hashes[i] == fp)
-		{
-			printf("found at %d", i);
-		}
-		
+		random_m[0] = (uint32_t)xoshiro256plus_random();
+		random_m[1] = (uint32_t)xoshiro256plus_random();
+		random_m[2] = (uint32_t)xoshiro256plus_random();
+		random_m[3] = (uint32_t)xoshiro256plus_random();
+		// compute hash of random blocks after fp until we find a hash that exists in the hashtable
+		uint64_t hash = cs48_dm(random_m, fp);
+		i_block = lookup_hash(hashtable_h, hash);
 	}
-	// If nothing found then repeat with other fp
+	printf("Found block %d\n", i_block);
+
+	// Build second pre-image by just replacing first
+	memcpy(&message[0], m1, sizeof(uint32_t) * 4);
+	memcpy(&message[4], m2, sizeof(uint32_t) * 4);
+	for (size_t i = 8; i < (i_block * 4); i+=4)
+	{
+		memcpy(&message[i], m2, sizeof(uint32_t) * 4);
+	}
+	memcpy(&message[i_block*4], random_m, sizeof(uint32_t) * 4);
 	
-	free(intermediate_hashes);
+	// Test collision
+	uint64_t h = hs48(message, (1 << 18), true, false); // message hashed with padding enabled
+	printf("hash: %llx\n", h);
+	if (h == ORIGINAL_HASH)
+	{
+		printf("Found second pre-image!!\n");
+		return true;
+	} else 
+	{
+		printf("Something went wrong. Hash at the end is incorrect\n");
+		return false;
+	}
+	
+	
+	free(hashtable_h);
+	free(message);
 }
 
 // int main()
