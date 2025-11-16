@@ -187,7 +187,6 @@ uint64_t get_cs48_dm_fp(uint32_t m[4])
  * where hs48_nopad is hs48 with no padding */
 void find_exp_mess(uint32_t m1[4], uint32_t m2[4])
 {
-	/* FILL ME */
 	printf("Starting MitM\n");
 
 	entry *hashtable_h = malloc(sizeof(entry) * N);
@@ -231,9 +230,22 @@ void find_exp_mess(uint32_t m1[4], uint32_t m2[4])
 	return;
 }
 
+
+
 void attack(void)
 {
-	/* FILL ME */
+	/*
+		second preimage of 2^18 blocks.
+		hash = 0x7CA651E182DBULL
+
+		1. compute expandable message with associated fixed-point fp
+		2. search for a collision block cm
+			so that cs48_dm(cm,fp) == one of the chaining values of mess
+		3. form second preim message m2 by expanding the expandable message to an appropriate number of blocks 
+			and suffixing the colliding block and then the remaining blocks identical to the ones of mess
+	*/	
+
+
 }
 
 // int main()

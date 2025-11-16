@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <string.h>
+#include <stdlib.h>
 #include "second_preim.h"
 
 /* Test against EP 2013/404, App. C */
@@ -90,6 +91,19 @@ bool test_em(void)
   	return true;
 }
 
+uint32_t* message(void) 
+{
+	uint32_t *mess = malloc(sizeof(uint32_t) * (4 * (1 << 18)));
+	for (int i = 0; i < (1 << 20); i+=4)
+	{
+		mess[i + 0] = i;
+		mess[i + 1] = 0;
+		mess[i + 2] = 0;
+		mess[i + 3] = 0;
+	}
+	return mess;
+}
+
 int main(void)
 {
 	printf("================ Tests ================\n\n");
@@ -142,6 +156,15 @@ int main(void)
 	} else {
 		printf("Incorrect implementation of find_exp_mess\n\n");
 	}
+
+	printf("Question 2\n	");
+	uint32_t *m = message();
+	uint64_t h = hs48(m, (1 << 18), true, true); // message hashed with padding enabled
+	printf("hash: %llx", h);
+
+	// @262143 : 0FFFFC 000000 000000 000000 => 8DBF3F6B87D8
+	// @262144 : 040000 000000 000000 000000 => 7CA651E182DB <-- Padding / length
+	 
 
   	return 0;
 }
