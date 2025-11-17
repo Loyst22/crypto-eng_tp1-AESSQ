@@ -4,7 +4,8 @@
 #include <stdbool.h>
 #include <math.h>
 #include <string.h>
-#include <threads.h>
+#include <pthread.h>
+#include <stdatomic.h>
 
 #include "xoshiro.h"
 #include "second_preim.h"
@@ -17,6 +18,8 @@
 #define ROTL24_21(x) ((((x) << 21) ^ ((x) >> 3)) & 0xFFFFFF)
 
 #define IV 0x010203040506ULL 
+
+#define N_THREADS 11
 
 /*
  * the 96-bit key is stored in four 24-bit chunks in the low bits of k[0]...k[3]
@@ -233,88 +236,162 @@ void find_exp_mess(uint32_t m1[4], uint32_t m2[4])
 	return;
 }
 
+  // For running on a thread
+typedef struct thread_args {
+  uint64_t fixpoint;
+  uint32_t random_m[4];
+  uint32_t i_block;
+  entry_hash *hashtable;
+  atomic_bool *collision;
+} thread_args;
+
+void find_collision_block(void *arg)
+{
+  thread_args *args = (thread_args*)arg;
+
+  while (!atomic_load(args->collision))
+  {
+    args->random_m[0] = (uint32_t)xoshiro256plus_random();
+    args->random_m[1] = (uint32_t)xoshiro256plus_random();
+    args->random_m[2] = (uint32_t)xoshiro256plus_random();
+    args->random_m[3] = (uint32_t)xoshiro256plus_random();
+    
+    // compute hash of random blocks after fp until we find a hash that exists in the hashtable
+    uint64_t hash = cs48_dm(args->random_m, args->fixpoint);
+    args->i_block = lookup_hash(args->hashtable, hash);
+
+    if (args->i_block != 0) 
+    {
+      printf("found block\n");
+      atomic_store(args->collision, true);
+      return;
+    }
+  }
+
+  return;
+}
 
 bool attack(void)
 {
-	/*
-		second preimage of 2^18 blocks.
-		hash = 0x7CA651E182DBULL
+  /*
+    second preimage of 2^18 blocks.
+    hash = 0x7CA651E182DBULL
 
-		1. compute expandable message with associated fixed-point fp
-		2. search for a collision block cm
-			so that cs48_dm(cm,fp) == one of the chaining values of mess
-		3. form second preim message m2 by expanding the expandable message to an appropriate number of blocks 
-			and suffixing the colliding block and then the remaining blocks identical to the ones of mess
-	*/	
+    1. compute expandable message with associated fixed-point fp
+    2. search for a collision block cm
+      so that cs48_dm(cm,fp) == one of the chaining values of mess
+    3. form second preim message m2 by expanding the expandable message to an appropriate number of blocks 
+      and suffixing the colliding block and then the remaining blocks identical to the ones of mess
+  */	
 
-	entry_hash *hashtable_h = malloc(sizeof(entry_hash) * (N_BLOCKS + 1));
-	uint32_t *message = malloc(sizeof(uint32_t) * (4 * (N_BLOCKS)));
-	uint64_t prev_hash = IV;
+  entry_hash *hashtable_h = malloc(sizeof(entry_hash) * (N_BLOCKS + 1));
+  uint32_t *message = malloc(sizeof(uint32_t) * (4 * (N_BLOCKS)));
+  uint64_t prev_hash = IV;
 
-		// create hashtable
-	for (size_t i = 0; i < (1 << 20); i+=4)
-	{
-		message[i + 0] = i;
-		message[i + 1] = 0;
-		message[i + 2] = 0;
-		message[i + 3] = 0;
+    // create hashtable
+  for (size_t i = 0; i < (1 << 20); i+=4)
+  {
+    message[i + 0] = i;
+    message[i + 1] = 0;
+    message[i + 2] = 0;
+    message[i + 3] = 0;
 
-		// uint64_t intermediate_hash = hs48(message, (i / 4), false, false);
-		uint64_t intermediate_hash = cs48_dm(&message[i], prev_hash);
-		prev_hash = intermediate_hash;
-		insert_hash(hashtable_h, intermediate_hash, (i / 4));
+    // uint64_t intermediate_hash = hs48(message, (i / 4), false, false);
+    uint64_t intermediate_hash = cs48_dm(&message[i], prev_hash);
+    prev_hash = intermediate_hash;
+    insert_hash(hashtable_h, intermediate_hash, (i / 4));
 
-		// if (i % (1 << 16) == 0) {
-		// 	printf("hashtable at 0x%x / 0x%x\n", i, (1 << 20));
-		// }
-	}
-	printf("\tbuilt hashtable\n");
-	// now we have all the intermediate hashes and can look those up fast
+    // if (i % (1 << 16) == 0) {
+    // 	printf("hashtable at 0x%x / 0x%x\n", i, (1 << 20));
+    // }
+  }
+  printf("\tbuilt hashtable\n");
+  // now we have all the intermediate hashes and can look those up fast
 
 
-	uint32_t m1[4];
-	uint32_t m2[4]; // chainable block
-	find_exp_mess(m1, m2);
-	uint64_t fp = get_cs48_dm_fp(m2);
+  uint32_t m1[4] = {0};
+  uint32_t m2[4] = {0}; // chainable block
+  find_exp_mess(m1, m2);
+  uint64_t fp = get_cs48_dm_fp(m2);
 
-	uint32_t random_m[4];
-	uint32_t i_block = 0;
+  uint32_t random_m[4];
+  uint32_t i_block = 0;
 
-	while (i_block == 0)
-	{
-		random_m[0] = (uint32_t)xoshiro256plus_random();
-		random_m[1] = (uint32_t)xoshiro256plus_random();
-		random_m[2] = (uint32_t)xoshiro256plus_random();
-		random_m[3] = (uint32_t)xoshiro256plus_random();
-		// compute hash of random blocks after fp until we find a hash that exists in the hashtable
-		uint64_t hash = cs48_dm(random_m, fp);
-		i_block = lookup_hash(hashtable_h, hash);
-	}
-	printf("\nFound block %d\n", i_block);
+  #ifdef N_THREADS
+  // ---------- MULTITHREAD ----------
+  // memory for random blocks
+  thread_args args[N_THREADS];
+  pthread_t threads[N_THREADS];
+  atomic_bool collision = false;
 
-	// Build second pre-image by just replacing first
-	memcpy(&message[0], m1, sizeof(uint32_t) * 4);
-	memcpy(&message[4], m2, sizeof(uint32_t) * 4);
-	for (size_t i = 8; i < (i_block * 4); i+=4)
-	{
-		memcpy(&message[i], m2, sizeof(uint32_t) * 4);
-	}
-	memcpy(&message[i_block*4], random_m, sizeof(uint32_t) * 4);
-	
-	// Test collision
-	uint64_t h = hs48(message, (1 << 18), true, false); // message hashed with padding enabled
-	printf("hash: %lx\n", h);
-	if (h == ORIGINAL_HASH)
-	{
-		return true;
-	} else 
-	{
-		return false;
-	}
-	
-	
-	free(hashtable_h);
-	free(message);
+  for (size_t i = 0; i < N_THREADS; i++) {
+    args[i].fixpoint = fp;
+    args[i].collision = &collision;
+    args[i].hashtable = hashtable_h;
+    args[i].i_block = 0;
+    
+    pthread_create(&threads[i], NULL, (void *(*)(void *))find_collision_block, (void*)&args[i]);
+  }
+  // pthread_join(threads[0], NULL);
+  for (size_t i = 0; i < N_THREADS; i++) {
+      pthread_join(threads[i], NULL);
+  }
+  // find which thread found the block and get back data
+  for (size_t i = 0; i < N_THREADS; i++) {
+    if (args[i].i_block != 0)
+    {
+      printf("thread %zu found block\n", i);
+      random_m[0] = args[i].random_m[0];
+      random_m[1] = args[i].random_m[1];
+      random_m[2] = args[i].random_m[2];
+      random_m[3] = args[i].random_m[3];
+
+      i_block = args[i].i_block;
+    }
+  }
+
+  #else
+  // ------------ SINGLE THREAD -------------
+
+  while (i_block == 0)
+  {
+    random_m[0] = (uint32_t)xoshiro256plus_random();
+    random_m[1] = (uint32_t)xoshiro256plus_random();
+    random_m[2] = (uint32_t)xoshiro256plus_random();
+    random_m[3] = (uint32_t)xoshiro256plus_random();
+    // compute hash of random blocks after fp until we find a hash that exists in the hashtable
+    uint64_t hash = cs48_dm(random_m, fp);
+    i_block = lookup_hash(hashtable_h, hash);
+  }
+  printf("\nFound block %d\n", i_block);
+
+  #endif /* ifdef N_THREADS
+   */
+  
+
+  // Build second pre-image by just replacing first
+  memcpy(&message[0], m1, sizeof(uint32_t) * 4);
+  memcpy(&message[4], m2, sizeof(uint32_t) * 4);
+  for (size_t i = 8; i < (i_block * 4); i+=4)
+  {
+    memcpy(&message[i], m2, sizeof(uint32_t) * 4);
+  }
+  memcpy(&message[i_block*4], random_m, sizeof(uint32_t) * 4);
+  
+  // Test collision
+  uint64_t h = hs48(message, (1 << 18), true, false); // message hashed with padding enabled
+  printf("hash: %lx\n", h);
+  if (h == ORIGINAL_HASH)
+  {
+    return true;
+  } else 
+  {
+    return false;
+  }
+  
+  
+  free(hashtable_h);
+  free(message);
 }
 
 // int main()

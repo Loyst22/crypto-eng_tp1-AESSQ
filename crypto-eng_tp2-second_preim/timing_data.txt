@@ -1,0 +1,99 @@
+        built hashtable
+found block
+thread 8 found block
+hash: 7ca651e182db
+
+________________________________________________________
+Executed in   21.77 secs    fish           external
+   usr time  182.70 secs    0.00 millis  182.70 secs
+   sys time    0.05 secs    2.93 millis    0.05 secs
+
+        built hashtable
+found block
+thread 2 found block
+hash: 7ca651e182db
+
+________________________________________________________
+Executed in   82.62 secs    fish           external
+   usr time  869.88 secs    0.10 millis  869.88 secs
+   sys time    0.20 secs    2.07 millis    0.20 secs
+
+        built hashtable
+found block
+thread 1 found block
+hash: 7ca651e182db
+
+________________________________________________________
+Executed in  233.09 secs    fish           external
+   usr time   40.76 mins    0.34 millis   40.76 mins
+   sys time    0.02 mins    1.90 millis    0.02 mins
+
+        built hashtable
+found block
+thread 4 found block
+hash: 7ca651e182db
+
+________________________________________________________
+Executed in  110.87 secs    fish           external
+   usr time   18.29 mins    2.07 millis   18.29 mins
+   sys time    0.01 mins    0.01 millis    0.01 mins
+
+        built hashtable
+found block
+thread 9 found block
+hash: 7ca651e182db
+
+________________________________________________________
+Executed in    7.23 secs    fish           external
+   usr time   14.15 secs    0.00 millis   14.15 secs
+   sys time    0.05 secs    1.95 millis    0.05 secs
+
+        built hashtable
+found block
+thread 0 found block
+hash: 7ca651e182db
+
+________________________________________________________
+Executed in   22.13 secs    fish           external
+   usr time  146.49 secs    0.00 millis  146.49 secs
+   sys time    0.14 secs    1.37 millis    0.14 secs
+
+        built hashtable
+found block
+thread 0 found block
+hash: 7ca651e182db
+
+________________________________________________________
+Executed in  234.83 secs    fish           external
+   usr time   40.09 mins  727.00 micros   40.09 mins
+   sys time    0.07 mins  486.00 micros    0.07 mins
+
+        built hashtable
+found block
+thread 8 found block
+hash: 7ca651e182db
+
+________________________________________________________
+Executed in  484.23 secs    fish           external
+   usr time   85.02 mins  851.00 micros   85.02 mins
+   sys time    0.13 mins  974.00 micros    0.13 mins
+
+        built hashtable
+found block
+thread 8 found block
+hash: 7ca651e182db
+
+________________________________________________________
+Executed in  121.17 secs    fish           external
+   usr time   21.10 mins    0.09 millis   21.10 mins
+   sys time    0.02 mins    2.04 millis    0.02 mins
+
+        built hashtable
+found block
+thread 3 found block
+hash: 7ca651e182db
+
+________________________________________________________
+Executed in  360.43 secs    fish           external
+   usr time   65.16 mins  734.00 micros   65.16 mins
+   sys time    0.01 mins  953.00 micros    0.01 mins
