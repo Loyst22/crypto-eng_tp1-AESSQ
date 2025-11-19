@@ -244,14 +244,18 @@ typedef struct thread_args {
 
 void find_collision_block(void *arg)
 {
-  thread_args *args = (thread_args*)arg;
+    thread_args *args = (thread_args*)arg;
+
+    pthread_t thread = pthread_self();
+    printf("thread = %lu\n", thread);
+    
 
   while (!atomic_load(args->collision))
   {
-    args->random_m[0] = (uint32_t)xoshiro256plus_random();
-    args->random_m[1] = (uint32_t)xoshiro256plus_random();
-    args->random_m[2] = (uint32_t)xoshiro256plus_random();
-    args->random_m[3] = (uint32_t)xoshiro256plus_random();
+    args->random_m[0] = ((uint32_t)xoshiro256plus_random()) + ((uint32_t) thread);
+    args->random_m[1] = ((uint32_t)xoshiro256plus_random()) + ((uint32_t) thread);
+    args->random_m[2] = ((uint32_t)xoshiro256plus_random()) + ((uint32_t) thread);
+    args->random_m[3] = ((uint32_t)xoshiro256plus_random()) + ((uint32_t) thread);
     
     // compute hash of random blocks after fp until we find a hash that exists in the hashtable
     uint64_t hash = cs48_dm(args->random_m, args->fixpoint);
@@ -309,6 +313,7 @@ bool attack(void)
   uint32_t m2[4] = {0}; // chainable block
   find_exp_mess(m1, m2);
   uint64_t fp = get_cs48_dm_fp(m2);
+  printf("found fixed-point\n");
 
   uint32_t random_m[4];
   uint32_t i_block = 0;
