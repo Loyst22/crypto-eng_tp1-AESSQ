@@ -76,7 +76,6 @@ void speck48_96(const uint32_t k[4], const uint32_t p[2], uint32_t c[2])
 /* the inverse cipher */
 void speck48_96_inv(const uint32_t k[4], const uint32_t c[2], uint32_t p[2])
 {
-	/* FILL ME */
 	uint32_t rk[23];
 	uint32_t ell[3] = {k[2], k[1], k[0]};
 
@@ -177,7 +176,6 @@ uint64_t hs48(const uint32_t *m, uint64_t fourlen, int padding, int verbose)
 /* Computes the unique fixed-point for cs48_dm for the message m */
 uint64_t get_cs48_dm_fp(uint32_t m[4])
 {
-	/* FILL ME */
 	uint32_t fp[2] = {0};
     uint32_t c[2] = {0};
 
@@ -204,7 +202,6 @@ void find_exp_mess(uint32_t m1[4], uint32_t m2[4])
 		m1[0] = xoshiro256plus_random();
 		m1[2] = xoshiro256plus_random();
 
-		// TODO change this into a hashtable insert
 		h = cs48_dm(m1, IV);
 		insert(hashtable_h, N, h, m1);
 	}
@@ -305,7 +302,6 @@ bool attack(void)
     // 	printf("hashtable at 0x%x / 0x%x\n", i, (1 << 20));
     // }
   }
-  printf("\tbuilt hashtable\n");
   // now we have all the intermediate hashes and can look those up fast
 
 
